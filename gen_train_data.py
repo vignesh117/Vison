@@ -88,7 +88,11 @@ class GenTrainPointsSIFT(object):
             print fname
             print x1,y1,x2,y2
             im = cv2.imread(self.datadir + '/' + fname)
-            print np.shape(im)
+            
+            # resize the trainboxpatches
+            
+            patch = im[y1:y2, x1:x2, :]
+            patch = cv2.resize(patch, (64,64))
             self.trainboxpatches.append(im[y1:y2, x1:x2, :])
             
         
