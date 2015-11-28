@@ -1,4 +1,5 @@
 from gen_train_data import *
+<<<<<<< HEAD
 from numpy import *
 import scipy.cluster.vq as vq
 import sys
@@ -9,10 +10,18 @@ import cv2
 import numpy as np
 
 K_THRESH = 1
+=======
+from PIL import Image
+import sys
+import os
+import random
+import cv2
+>>>>>>> d3ff76a9e775ebc9ddda96e25131dc5fdb4ca13b
 
 class siftFeatures(object):
 
     train_patches = []
+<<<<<<< HEAD
     siftfeatures = None
     siftclusters = None
     negpatches = None
@@ -22,12 +31,18 @@ class siftFeatures(object):
 
     # Clustering
     codebook = None
+=======
+    siftfeaturs = []
+>>>>>>> d3ff76a9e775ebc9ddda96e25131dc5fdb4ca13b
     # initialize the training data
 
     def __init__(self):
         gtp = GenTrainPointsSIFT()
         self.train_patches = gtp.trainboxpatches
+<<<<<<< HEAD
         self.negpatches = gtp.negpatches
+=======
+>>>>>>> d3ff76a9e775ebc9ddda96e25131dc5fdb4ca13b
 
 
     def display_random_path(self):
@@ -41,6 +56,7 @@ class siftFeatures(object):
         Generates sift features for the points
         """
 
+<<<<<<< HEAD
         # if not os.path.isfile('sift'):
         #     raise 'Sift binary not in path'
 
@@ -170,3 +186,41 @@ if __name__ == '__main__':
     sf.gen_sift_clusters()
     sf.gen_histograms()
     sf.gen_data_for_classifier()
+=======
+        if not os.path.isfile('sift'):
+            raise 'Sift binary not in path'
+
+        if self.train_patches == []:
+            raise 'Training patches is empty'
+
+            
+        # Write train patches to file
+        i = 0
+        for p in self.train_patches:
+            im = Image.fromarray(p)
+            im = im.convert('RGB')
+            #im.save(str(i) + '.pgm')
+            cv2.imwrite(str(i)+'.pgm',p)
+            i += 1
+
+        # Compute sift for images
+        siftforimg = {}
+        for i in range(len(self.train_patches)):
+            imgname = str(i)+'.jpg'
+
+            # Command for generating sift
+            command = './sift < '+str(i)+'.jpg'
+            print command
+            sift = os.popen( command)
+            siftforimg[str(i) + '.jpg'] = sift
+
+        print siftforimg['1.jpg']
+            
+
+if __name__ == '__main__':
+    sf = siftFeatures()
+    sf.display_random_path()
+    sf.gen_sift_features()
+        
+    
+>>>>>>> d3ff76a9e775ebc9ddda96e25131dc5fdb4ca13b
