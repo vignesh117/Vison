@@ -1,21 +1,27 @@
 import ConfigParser as cp
+from skimage.util.shape import view_as_windows
+import random
+from sklearn.feature_extraction import image
 import cv2
 import numpy as np
 import os
 
 
 class GenTrainPointsSIFT(object):
-    datadir= ""
+    posdatadir= ""
+    negdatadir= ""
     trainfiles = []
     boundaryboxes = []
     imageseriesname = ""
     trainboxpatches = []
     bbfilenames = []
+    negpatches = [] # negative training examples
     
     def __init__(self):
         config = cp.RawConfigParser()
         config.read('config.cfg')
-        self.datadir = config.get('init', 'datadir')
+        self.datadir = config.get('init', 'posdatadir')
+        self.negdatadir = config.get('init', 'negdatadir')
         
         # Set the image series name
         temp = self.datadir.split('/')[-1]
@@ -26,6 +32,7 @@ class GenTrainPointsSIFT(object):
         self.gen_train_files()
         self.get_boundary_boxes()
         self.get_trainbox_patches()
+        #self.gen_neg_examples()
         
         
     def gen_train_files(self):
@@ -85,8 +92,6 @@ class GenTrainPointsSIFT(object):
             x2 = float(bbox[2])
             y2 = float(bbox[3])
             # read the image 
-            print fname
-            print x1,y1,x2,y2
             im = cv2.imread(self.datadir + '/' + fname)
             
             # resize the trainboxpatches
@@ -94,12 +99,47 @@ class GenTrainPointsSIFT(object):
             patch = im[y1:y2, x1:x2, :]
             patch = cv2.resize(patch, (64,64))
             self.trainboxpatches.append(im[y1:y2, x1:x2, :])
+
+
+    def gen_neg_examples(self):
+        """
+        Generates negative training patches
+        from the dataset specified in the configuration
+        """
+
+        negfiles = os.listdir(self.negdatadir)
+        negpatches = []
+
+        for n in negfiles[:10]:
+            f = self.negdatadir + '/' +  n
+
+            if 'jpg' not in f:
+                continue
+            print 'Processing image'+ f
+            im = cv2.imread(f)
+            #im =cv2.cvtColor(im,cv2.COLOR_BGR2GRAY)
+
+
+            # Generate the negative patch
+            #patch = image.extract_patches_2d(im, (256, 256)) # This generalates nultiple patches
+
+            print np.shape(im)
+            patch =  view_as_windows(im, (64,64,3),1)
             
+            patch = [cv2.resize(x,(64,64)) for x in patch]
+
+            # randomly choose 10 patches from all patches for this image
+
+            patches = []
+            for i in range(20):
+                
+                randompatch = random.choice(patch)
+                patches.append(randompatch)
+
+            negpatches += patches
+            self.negpatches = negpatches
+
         
-        
-        
-        
-    
 if __name__ == '__main__':
     gt = GenTrainPointsSIFT()
     #print gt.datadir
@@ -108,5 +148,9 @@ if __name__ == '__main__':
     gt.get_boundary_boxes()
     #print gt.boundaryboxes
     #print gt.trainboxpatches
+    gt.gen_neg_examples()
     cv2.imshow("sample",gt.trainboxpatches[1])
+
+    # display a negative training examples
+    cv2.imshow('negative example', random.choice(gt.negpatches))
     cv2.waitKey(0)    
