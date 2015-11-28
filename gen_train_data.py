@@ -32,7 +32,7 @@ class GenTrainPointsSIFT(object):
         self.gen_train_files()
         self.get_boundary_boxes()
         self.get_trainbox_patches()
-        #self.gen_neg_examples()
+        self.gen_neg_examples()
         
         
     def gen_train_files(self):
