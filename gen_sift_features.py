@@ -28,6 +28,10 @@ class siftFeatures(object):
         gtp = GenTrainPointsSIFT()
         self.train_patches = gtp.trainboxpatches
         self.negpatches = gtp.negpatches
+        self.gen_sift_features()
+        self.gen_sift_clusters()
+        self.gen_histograms()
+        self.gen_data_for_classifier()
 
 
     def display_random_path(self):
@@ -79,7 +83,8 @@ class siftFeatures(object):
 
         # Computing sift features for negative examples
 
-        for k in range(len(self.train_patches )-1,j):
+        for k in range(len(self.train_patches ),j):
+            print 'processing image ' + str(k) +' for sift'
 
             sift = cv2.xfeatures2d.SIFT_create()
             siftforimages[str(k) + '.jpg'] = sift.detectAndCompute(cv2.imread(str(k) +'.jpg'), None)
@@ -159,7 +164,8 @@ class siftFeatures(object):
             data_row = hstack((self.classlabels[i], histogram))
             data_rows = vstack((data_rows, data_row))
         data_rows = data_rows[1:]
-        self.classifier_train_data = data_rows    
+        self.classifier_train_data = data_rows
+        np.savetxt('traindata.csv',self.classifier_train_data, delimiter = ',')
         
 
 

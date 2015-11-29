@@ -124,16 +124,20 @@ class GenTrainPointsSIFT(object):
             #patch = image.extract_patches_2d(im, (256, 256)) # This generalates nultiple patches
 
             print np.shape(im)
-            patch =  view_as_windows(im, (64,64,3),1)
+            patch =  view_as_windows(im, (250,250,3),10)
             
-            patch = [cv2.resize(x,(64,64)) for x in patch]
+            #patch = [cv2.resize(x,(64,64)) for x in patch]
 
-            # randomly choose 10 patches from all patches for this image
-
+            # randomly choose 20 patches from all patches for this image
+            fdimlen = np.shape(patch)[0]
+            sdimlen = np.shape(patch)[1]
             patches = []
             for i in range(20):
                 
-                randompatch = random.choice(patch)
+                randomdim = random.choice(range(fdimlen ))
+                randomsdim = random.choice(range(sdimlen))
+                randompatch = patch[randomdim][randomsdim][0]
+                randompatch = cv2.resize(randompatch, (64,64))
                 patches.append(randompatch)
 
             negpatches += patches
