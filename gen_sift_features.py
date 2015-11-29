@@ -19,6 +19,7 @@ class siftFeatures(object):
     trainhistograms = None
     classlabels = []
     nclusters = None
+    patchdict = {}
 
     # Clustering
     codebook = None
@@ -60,7 +61,8 @@ class siftFeatures(object):
         i = 0
         classlabels = []
         for p in self.train_patches:
-            cv2.imwrite(str(i) +'.jpg',p)
+            #cv2.imwrite(str(i) +'.jpg',p)
+            self.patchdict[str(i) +'.jpg'] = p
             classlabels.append(1)
             i+=1
 
@@ -68,26 +70,35 @@ class siftFeatures(object):
             j = i
         for p in self.negpatches:
             classlabels.append(-1)
-            cv2.imwrite(str(j) +'.jpg',p)
+            #cv2.imwrite(str(j) +'.jpg',p)
+            self.patchdict[str(j) +'.jpg'] = p
             j+=1
 
         self.classlabels = classlabels
 
-        for i in range(len(self.train_patches)):
+        for i in range(len(self.train_patches) ):
             sift = cv2.xfeatures2d.SIFT_create()    
             #siftforimages[str(i)+'.jpg'] = sift.detect(cv2.imread(str(i) + '.jpg'))
-            siftforimages[str(i) + '.jpg'] = sift.detectAndCompute(cv2.imread(str(i) +'.jpg'), None)
+            #siftforimages[str(i) + '.jpg'] = sift.detectAndCompute(cv2.imread(str(i) +'.jpg',cv2.IMREAD_GRAYSCALE), None)
+            
+            try:
+                siftforimages[str(i)+'.jpg'] = sift.detectAndCompute(self.patchdict[str(i) + '.jpg'], None)
+            except cv2.error:
+                print 'The incorrect patch size was' + str(np.shape(self.patchdict[str(i) + '.jpg']))
+                cv2.imshow('patch',self.patchdict[str(i) + '.jpg'])
+                cv2.waitKey(0)
         self.siftfeatures = siftforimages
-
+        
             #print np.shape(siftforimages['1.jpg'][1])
 
         # Computing sift features for negative examples
 
-        for k in range(len(self.train_patches ),j):
+        for k in range(len(self.train_patches ),j ):
             print 'processing image ' + str(k) +' for sift'
 
             sift = cv2.xfeatures2d.SIFT_create()
-            siftforimages[str(k) + '.jpg'] = sift.detectAndCompute(cv2.imread(str(k) +'.jpg'), None)
+            #siftforimages[str(k) + '.jpg'] = sift.detectAndCompute(cv2.imread(str(k) +'.jpg', cv2.IMREAD_GRAYSCALE), None)
+            siftforimages[str(k)+'.jpg'] = sift.detectAndCompute(self.patchdict[str(k) + '.jpg'], None)
         self.siftfeatures.update(siftforimages)
 
 
@@ -104,9 +115,15 @@ class siftFeatures(object):
         fullmatrix = []
         
         # for each image, get the sift features
-        for i in range(len(self.siftfeatures.keys())):
+        for i in range(len(self.siftfeatures.keys()) ):
             kpointmat = self.siftfeatures[str(i)+'.jpg'][1]
             kpointmat = np.matrix(kpointmat)
+            
+            if np.shape(kpointmat)[1] == 1:
+                print 'No interesting points found for ' + str(i)+'.jpg'
+                print ' Deleting that entry from sift'
+                del self.siftfeatures[str(i)+'.jpg']
+                continue
             print np.shape(kpointmat)
             if fullmatrix == []:
                 fullmatrix = kpointmat
@@ -139,13 +156,16 @@ class siftFeatures(object):
         """
 
         allhistograms = {}
-        for i in range(len(self.train_patches) + len(self.negpatches) ):
-            descriptors = self.siftfeatures[str(i) + '.jpg'][1]
+        #for i in range(len(self.train_patches) + len(self.negpatches) ):
+        #for i in range(len(self.siftfeatures)):
+        for k in self.siftfeatures.keys():
+            #descriptors = self.siftfeatures[str(i) + '.jpg'][1]
+            descriptors = self.siftfeatures[k][1]
             code, dist = vq.vq(descriptors, self.codebook)
             histogram_of_words, bin_edges = histogram(code,
                                                       bins=range(self.codebook.shape[0] + 1),
                                                       normed=True)
-            allhistograms[str(i) + '.jpg'] = histogram_of_words
+            allhistograms[k] = histogram_of_words
 
         self.trainhistograms = allhistograms
 
@@ -154,8 +174,11 @@ class siftFeatures(object):
         # Some     
 
         data_rows = zeros(self.nclusters + 1)
-        for i in range(len(self.train_patches) + len(self.negpatches)):
-            histogram = self.trainhistograms[str(i) + '.jpg']
+        #for i in range(len(self.train_patches) + len(self.negpatches)):
+        i = 0
+        for k in self.siftfeatures.keys():
+            #histogram = self.trainhistograms[str(i) + '.jpg']
+            histogram = self.trainhistograms[k]
             if histogram.shape[0] != self.nclusters:
                 nclusters = histogram.shape[0]
                 data_rows = zeros(nclusters + 1)
@@ -163,6 +186,7 @@ class siftFeatures(object):
 
             data_row = hstack((self.classlabels[i], histogram))
             data_rows = vstack((data_rows, data_row))
+            i += 1
         data_rows = data_rows[1:]
         self.classifier_train_data = data_rows
         np.savetxt('traindata.csv',self.classifier_train_data, delimiter = ',')
