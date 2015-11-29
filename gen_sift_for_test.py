@@ -182,7 +182,7 @@ class GenSiftForTest(object):
             i = np.unravel_index(p, np.shape(img)[:2])
             x = i[0]
             y = i[1]
-            print x,y
+            #print x,y
             draw.point((x,y), fill = 255)
         
         im.show() 
@@ -197,7 +197,7 @@ class GenSiftForTest(object):
         patchindices = []
         print 'There are '+ str(len(matchedpat))+ ' matched patches'
         for m in matchedpat:
-            print m
+            #print m
             #cv2.waitKey(1)
            
             p = int(re.findall('[0-9]+',m)[0])

@@ -76,7 +76,8 @@ print allfinalpatch.shape
 # for i in range(dim1 - 1):
 #     allfinalpatch = np.hstack(finalpatch)
 # print allfinalpatch.shape
-cv2.imshow('allfinalpatch',allfinalpatch)
+#finalpatch = cv2.resize(allfinalpatch, (100,100))
+cv2.imshow('allfinalpatch',finalpatch)
 cv2.waitKey(0)
 
 
