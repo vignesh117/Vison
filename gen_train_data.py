@@ -1,5 +1,6 @@
 import ConfigParser as cp
 from skimage.util.shape import view_as_windows
+from skimage import color
 import random
 from sklearn.feature_extraction import image
 import cv2
@@ -33,6 +34,14 @@ class GenTrainPointsSIFT(object):
         self.get_boundary_boxes()
         self.get_trainbox_patches()
         self.gen_neg_examples()
+        
+    def rgb2gray(self, rgb):
+       
+        img = color.rgb2gray(rgb);
+        # r, g, b = rgb[:,:,0], rgb[:,:,1], rgb[:,:,2]
+   #      gray = 0.2989 * r + 0.5870 * g + 0.1140 * b
+
+        return img
         
         
     def gen_train_files(self):
@@ -86,7 +95,6 @@ class GenTrainPointsSIFT(object):
             
             fname = self.bbfilenames[i]
             bbox = self.boundaryboxes[i]
-            print bbox
             x1 = float(bbox[0])
             y1 = float(bbox[1])
             x2 = float(bbox[2])
@@ -94,11 +102,13 @@ class GenTrainPointsSIFT(object):
             # read the image 
             im = cv2.imread(self.datadir + '/' + fname)
             
+            #gray = self.rgb2gray(im)
+            gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
             # resize the trainboxpatches
             
-            patch = im[y1:y2, x1:x2, :]
+            patch = gray[y1:y2, x1:x2]
             patch = cv2.resize(patch, (64,64))
-            self.trainboxpatches.append(im[y1:y2, x1:x2, :])
+            self.trainboxpatches.append(gray[y1:y2, x1:x2])
 
 
     def gen_neg_examples(self):
@@ -117,6 +127,8 @@ class GenTrainPointsSIFT(object):
                 continue
             print 'Processing image'+ f
             im = cv2.imread(f)
+            #gray = self.rgb2gray(im)
+            gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
             #im =cv2.cvtColor(im,cv2.COLOR_BGR2GRAY)
 
 
@@ -124,22 +136,26 @@ class GenTrainPointsSIFT(object):
             #patch = image.extract_patches_2d(im, (256, 256)) # This generalates nultiple patches
 
             print np.shape(im)
-            patch =  view_as_windows(im, (250,250,3),10)
-            
+            patch =  view_as_windows(gray, (100,100),101)
+            print np.shape(patch)            
             #patch = [cv2.resize(x,(64,64)) for x in patch]
 
             # randomly choose 20 patches from all patches for this image
             fdimlen = np.shape(patch)[0]
             sdimlen = np.shape(patch)[1]
             patches = []
-            for i in range(20):
-                
+            
+            #for i in range(len(self.trainpatches)):
+            for i in range(8): # we are getting too many negative examples, so reducing to 5
+
                 randomdim = random.choice(range(fdimlen ))
                 randomsdim = random.choice(range(sdimlen))
-                randompatch = patch[randomdim][randomsdim][0]
-                randompatch = cv2.resize(randompatch, (64,64))
+                #randompatch = patch[randomdim][randomsdim][0] # if color un comment this
+                randompatch = patch[randomdim][randomsdim]
+                #randompatch = cv2.resize(randompatch, (64,64))
                 patches.append(randompatch)
-
+ 
+            
             negpatches += patches
             self.negpatches = negpatches
 
