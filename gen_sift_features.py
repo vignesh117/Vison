@@ -7,6 +7,7 @@ import os
 import random
 import cv2
 import numpy as np
+import pickle
 
 K_THRESH = 1
 
@@ -33,6 +34,9 @@ class siftFeatures(object):
         self.gen_sift_clusters()
         self.gen_histograms()
         self.gen_data_for_classifier()
+        
+        # 
+        
 
 
     def display_random_path(self):
@@ -196,7 +200,8 @@ class siftFeatures(object):
 if __name__ == '__main__':
     sf = siftFeatures()
     #sf.display_random_path()
-    sf.gen_sift_features()
-    sf.gen_sift_clusters()
-    sf.gen_histograms()
-    sf.gen_data_for_classifier()
+    #sf.gen_sift_features()
+    #sf.gen_sift_clusters()
+    #sf.gen_histograms()
+    #sf.gen_data_for_classifier()
+    pickle.dump(sf.codebook, open('codebook.pickle','w'))

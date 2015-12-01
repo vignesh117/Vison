@@ -136,7 +136,7 @@ class GenTrainPointsSIFT(object):
             #patch = image.extract_patches_2d(im, (256, 256)) # This generalates nultiple patches
 
             print np.shape(im)
-            patch =  view_as_windows(gray, (100,100),101)
+            patch =  view_as_windows(gray, (64,64),65)
             print np.shape(patch)            
             #patch = [cv2.resize(x,(64,64)) for x in patch]
 

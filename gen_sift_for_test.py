@@ -11,7 +11,8 @@ import re
 import pickle
 
 class GenSiftForTest(object):
-    
+
+
     testimage = ''
     siftfeatures = None
     testhistograms = None
@@ -21,6 +22,10 @@ class GenSiftForTest(object):
     classlabels = []
     testpatches = []
     patch = None
+    
+    # for storing patches
+    patchdict = {}
+    patchinddict = {}
     predictionfile = 'Predictions.csv'
     processedhists = [] # Histograms for which descriptor was not None
     def __init__(self):
@@ -29,9 +34,15 @@ class GenSiftForTest(object):
         self.testimage = config.get('init', 'testimage')
         
         # Get the codebook from the training phasse
-        
-        sf = siftFeatures()
-        self.codebook = sf.codebook
+       
+        if not os.path.isfile('codebook.pickle'):
+            print 'Codebook not found. Generating..\n'
+            sf = siftFeatures()
+            self.codebook = sf.codebook
+            
+        else:
+            self.codebook = pickle.load(open('codebook.pickle'))
+   
         self.nclusters = self.codebook.shape[0]
         
         # Generate sift featurs, histograms 
@@ -41,6 +52,33 @@ class GenSiftForTest(object):
         self.gen_test_data()
         #self.view_results2()
         #self.view_results_knn()
+        
+    def gen_patch_dict(self,image, stepSize, windowSize):
+        
+        patchdict = {}
+        patchinddict = {}
+        
+        windows = []
+        for y in xrange(0, image.shape[0], stepSize):
+            for x in xrange(0, image.shape[1], stepSize):
+                window = (x, y, image[y:y + windowSize[1], x:x + windowSize[0]])
+                print window[2].shape
+                
+                if np.shape(window[2]) == windowSize:
+                    windows.append(window)
+        # Make the patch dict
+        for i in range(len(windows)):
+            patchdict[i] = np.array(windows[i][2])
+            print windows[i][2]
+            
+            ind = (windows[i][0], windows[i][1])
+            patchinddict[i] = ind
+            
+        self.patchdict = patchdict
+        self.patchinddict = patchinddict
+        return patchdict
+            
+        
         
     def sub2ind(self,array_shape, rows, cols):
         ind = rows*array_shape[1] + cols
@@ -66,28 +104,34 @@ class GenSiftForTest(object):
         #Generate patches from test iage 
         #patch =  view_as_windows(im, (64,64,3), 65)
         #patch =  view_as_windows(im, (100,100))
-        patch =  view_as_windows(gray, (64,64), 65)
+        #patch =  view_as_windows(gray, (64,64), 65)
         #patch = image.extract_patches(im, (100,100))
-        fdimlen = np.shape(patch)[0]
-        sdimlen = np.shape(patch)[1]
-        allpatches = []
+        patchdict = self.gen_patch_dict(gray,  65, (64,64))
+        patch = patchdict.values()
+        # fdimlen = np.shape(patch)[0]
+#         sdimlen = np.shape(patch)[1]
+#         allpatches = []
         
-        for i in range(fdimlen):
-            for j in range(sdimlen):
-                #p = patch[i][j][0]
-                p = patch[i][j]
-                #p = cv2.resize(p,(64,64))
-                allpatches.append(p)
+        # for i in range(fdimlen):
+        #     for j in range(sdimlen):
+        #         #p = patch[i][j][0]
+        #         p = patch[i][j]
+        #         #p = cv2.resize(p,(64,64))
+        #         allpatches.append(p)
     
         #write the patches to file
-        for i in range(len(allpatches)):
-            cv2.imwrite('testPatch' + str(i)+'.jpg', allpatches[i])
+        #for i in range(len(allpatches)):
+        for i in range(len(patch)):
+            cv2.imwrite('testPatch' + str(i)+'.jpg', patchdict[i])
         
-        self.testpatches = allpatches
+        #self.testpatches = allpatches
+        self.testpatches = patch
         self.patch = patch # original patch for indexing
         
         # save the patches to a file
         pickle.dump(self.patch, open('patch.pickle','w'))
+        pickle.dump(self.patchdict, open('patchdict.pickle','w'))
+        pickle.dump(self.patchinddict, open('patchinddict.pickle','w'))
         
     def gen_sift_features(self):
         classlabels = []
